@@ -1,0 +1,360 @@
+READING THE CODE
+
+Reading a nontrivial program is always a daunting
+exercise.  Here are two tricks which can make it
+a -lot- easier and more pleasant. (Both are based
+on x/emacs, but if you're addicted to an inferior
+editor :) equivalent ones are likely available.)
+
+1) To find all references to a given identifier
+   in a flash, and move to any of them with a
+   keystroke or two, install and use the GNU 'id'
+   utilities.   The Debian package name is
+   'id-utils'.  Follow the directions in the
+   emacs binding file id-utils.el.  Run
+   'mkid *.[ch]' to create the ID index file.
+
+   Now, just put the cursor on any identifier
+   in any file and do M-l.  Magic!!
+
+   (x/emacs 'tags' provide similar functionality,
+   but the id-utils are much faster and scale
+   much better to large source code bases.)
+
+2) Ever have the feeling you can't see the
+   code forest for the code trees?  Here's
+   an instant fix based on outline-minor-mode:
+   Put the following in your ~/.emacs file:
+
+    (global-set-key "\C-Ct" (function crt-enter-outline-mode))
+    (global-set-key "\C-Ca" (function crt-exit-outline-mode))
+
+    (defun crt-enter-outline-mode nil
+      "Enter outline mode for quick overview of code file"
+      (interactive)
+    ;  (make-local-variable 'crt-old-mode-name) ; why no work?
+      (setq crt-old-mode-name mode-name)
+    ;  (make-local-variable 'crt-old-major-mode)
+      (setq crt-old-outline-regexp outline-regexp)
+      (setq crt-old-major-mode major-mode)
+      (outline-mode)
+      (setq outline-regexp "[A-Za-z(]")
+      (hide-body))
+
+    (defun crt-exit-outline-mode nil
+      "Undo effects of crt-enter-outline-mode"
+      (interactive)
+      (show-all)
+      (setq mode-name crt-old-mode-name)
+      (setq major-mode crt-old-major-mode)
+      (setq outline-regexp crt-old-outline-regexp)
+      (redraw-modeline))
+
+   Now, whenever you type C-ct (<CTRL-C>, 't'), the
+   file will collapse down to just lines starting
+   with an alphabetic -- for most coding styles,
+   this will give you just a list of the functions
+   and global variables in the file.
+
+   INSTANT OVERVIEW! :)
+
+   To get the regular display back, just do
+   \C-Ca (<CTRL-C>, 'a').
+
+   The pzip source files are formatted to work
+   particularly well with this technique, but it
+   will to a passable job on just about any source
+   file you grab.
+
+   (Fancier solutions like outline-mode and folding.el
+   are also available.  After using them for a few
+   years, I decided that the above simple hack is more
+   effective for general coding purposes.  But YMMV.)
+
+
+
+MODIFYING THE CODE
+
+1) If you haven't already done so, learn to use x/emacs
+   'tags' facilities for doing global renames and searches
+   through all the files.  The time saved by doing just
+   a few 'tags-search' or 'tags-query-replace' operations
+   will more than pay back your initial time investment.
+   Synopsis:
+   o At the unix commandline do:   etags *.[ch]
+   o In x/emacs do:  visit-tags-table
+       and give it the name of the TAGS file created above.
+   o Use M-x tags-search and M-x tags-query-replace to
+     do global searches and replacements.  You may use
+     M-, (ESC ',' or <ALT>-,) to continue after interrupting.
+   o Do 'M-x apropos tags' to find other tags-* operations.    
+
+
+PZIP CODING STYLE
+
+Code formatting is a purely religious matter.
+I won't defend or proselytize, just document
+the style I've used for this code.
+
+The one thing -everyone- agrees on is that any
+-consistent- coding style is better than none
+-- so please either stick to the below when
+hacking this code, or else reformat the
+entire program to your preferred style.
+
+
+IDENTIFIER CONVENTIONS:
+
+    /* Words aways distinguished by   */
+    /* underbars, not capitalization: */
+    my_static_function     /* Nothing capitalized.                                        */
+    my_Exported_Function   /* First word(s) are class name, REST of words capitalized.    */
+    My_Compound_Type       /* Each word capitalized.                                      */
+    my_native_type         /* uint &tc uncapitalized.  Usually no underbars -- tradition. */
+    my_variable            /* Nothing capitalized.  Length roughly proportional to scope. */
+    my_field_name          /* Nothing capitalized.                                        */
+    MY_CONSTANT            /* All caps.                                                   */
+
+Hint:  Leaving out vowels will -not- make your code more readable!
+
+
+COMMENT CONVENTIONS:
+
+    /* Sentences formatted with leading capital and ending */
+    /* punctuation -- they're English, dammit!  Illiteracy */
+    /* is -not- a prerequisite to programming prowess.     */ 
+
+    int a = f();     /* Short local comments at right. */
+
+    /* In general, start each paragraph of code off */
+    /* with an explanatory comment -- blank line    */
+    /* above, no blank line below comment:          */
+    for (i = max;   i --> 0;   ) {
+        ...
+    }
+
+    /* Don't clutter code with comments */
+    /* that restate the obvious!        */
+    int count = 0;      /* Reset count. */
+
+
+ALLOWED INDENTATION STYLES:
+
+    /* No blanks around if/while conditionals. */
+    /* Line up parallel parts where possible:  */
+    if (cond)    expr();
+    else         expr();
+
+    /* Closing delimiter always below start of */
+    /* line containing opening delimiter:      */
+    if (cond) {
+        expr();
+    }
+
+    /* Whenever sensibly possible, put shortest */
+    /* clause first in an if-then-else -- this  */
+    /* minimizes load on reader's short-term    */
+    /* memory.  (This principle applies to all  */
+    /* binary constructions.)                    */
+    if (cond) {
+        ...
+    } else {
+        ...
+        ...
+    }
+
+    /* Format parallel conditions vertically: */
+    if (condA
+    ||  condB
+    ||  condC
+    ){
+        ...
+    }
+    if (condA
+    &&  condB
+    &&  condC
+    ){
+        ...
+    }
+
+    /* Format switched compactly where it will  */
+    /* help the reader see the structure, using */
+    /* at least triple blanks to separate the   */
+    /* columns:                                 */
+    switch (expr()) {
+    case 0:   expr();   break;
+    case 1:   expr();   break;
+       ...
+    }
+
+    /* When the above won't work, put blank    */
+    /* lines between the case clauses:         */ 
+    switch (expr()) >
+
+    case 0:
+        expr();
+        break;
+
+    case 1:
+        expr();
+        break;
+        ...
+
+    default:
+        /* Think VERY carefully before omitting */
+        /* the 'default' case!                  */
+        assert( 0 && "This should not happen!" );
+        break;
+
+    }
+
+    /* 'for' clauses separated by triple blank: */
+    for (i = 0;   i < N;    ++) {
+        ...
+    }
+
+    /* Almost always blanks around and separating fn args: */
+    f( a, b, c );
+    f(
+        a,
+        b,
+        c
+    ); 
+
+    /* An exception is when using blanks to show nesting: */
+    f1( f2(a,b,c), f3(d,e,f), f3(g,h,i) );
+
+    /* Initializing variables at point of declaration */
+    /* strongly encouraged.  Every uninitialized var  */
+    /* is a landmine waiting for the code maintainer  */
+    /* to step on it:                                 */
+    {   int i = 0;
+        int j = i;
+        ...
+    }
+
+    /* Use blanks to show expression hierarchy.  */
+    /* Use no blanks, one blank or three blanks. */
+    /* Avoid using two blanks or four or more:   */
+    a = (b*c + d*e)   /   (f*g + h*i);
+
+
+FORBIDDEN INDENTATION STYLES:
+
+    /* Indentation MUST have an open and close delimiter: */
+    if (cond)
+       expr();
+
+    /* if/while/for conditions must NOT be */
+    /* blank-padded like function calls!   */
+    if( cond ) {
+       expr();
+    }
+
+    /* Don't format the 'else' like a separate */
+    /* statement!  It isn't, and doing so just */
+    /* creates extra cognitive work for the    */
+    /* reader of the code:                     */
+    if (cond) {
+        ...
+    }
+
+    else {
+        ...
+    }
+
+
+    /* DON'T separate the 'else' froms its braces,  */
+    /* this just wastes space. (DO feel free to put */
+    /* blank lines above and below "} else {" when  */
+    /* it will improve readability.)                */
+    if (cond) {
+        ...
+    }
+    else
+    {
+        ...
+    }
+
+
+
+
+OTHER RANDOM HINTS:
+
+Use assert()s liberally.  They are good documentation and
+will save you countless debugging hours by changing
+obscure bugs into trivially obvious ones.  Here is
+a useful trick for making them more self-documenting:
+
+   assert( 0 && "This should never happen!" );
+
+The '0' makes it always FALSE, the string will print
+out at runtime, clarifying the nature of the problem.
+
+
+
+
+To make the code easier to understand and maintain,
+always make things as local as possible:
+
+ o  Never use a program-scope global variable when
+    a file-local static variable will do.
+
+ o  Never use a file-local static variable when a
+    function-local variable will do.
+
+ o  Never use a function-local variable when a
+    block-local variable would do.
+
+ o  Always declare a function static if it isn't
+    intended to be called from othe files.
+
+
+
+Use a 'goto' if the alternative would be really
+gory, but only after you've looked really hard
+for any better way of phrasing it.  This should
+happen to you about once a year in vanilla
+coding.  (Some specialized state-machine styles
+may use a lot.)
+
+
+
+Avoid side-effects like the plague -- the
+more so the greater their scope in space
+and time.  Whenever reasonably possible,
+have a function read only data explicitly
+handed to it as an argument, and change
+only what it explicitly returns as a
+result.
+
+This does NOT mean passing and returning from
+every function a pointer to your global state
+record!
+
+It means passing each function exactly what
+it needs, no more and no less, and having it
+return just the work it did, no more and
+no less.
+
+Work twice as hard at this as seems humanly
+reasonable, and you'll halve your debugging
+time.
+
+
+
+KISS:  Keep It Simple, Stupid!  This is the
+golden principle of all engineering.  Simplify,
+simplify, simplify.  Often your the first
+solution you find won't be the simplest way
+of doing it.  Or the third, or the fifth.
+
+
+
+Get a simple system running fast.  Test it
+constantly as you change the code.  Write
+as much code as necessary to automate
+the testing.  Catching a bug within
+minutes rather than months of creating
+it often slashes your debug time from
+hours to seconds.

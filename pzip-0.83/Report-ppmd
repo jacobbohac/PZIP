@@ -1,0 +1,109 @@
+#!/usr/bin/perl -w
+use strict;
+
+# This script evaluates pzip by making up a little report looking like:
+#    
+#   paper5:   11954 ->   4250 = 2.8442 bpc   Improvement: 0.0238 bpc
+#   paper4:   13286 ->   4596 = 2.7674 bpc   Improvement: 0.0086 bpc
+#   obj1  :   21504 ->   9481 = 3.5272 bpc   Improvement: 0.0078 bpc
+#   paper6:   38105 ->  10753 = 2.2576 bpc   Improvement: 0.0714 bpc
+#   progc :   39611 ->  10887 = 2.1988 bpc   Improvement: 0.0902 bpc
+#   paper3:   46526 ->  14239 = 2.4484 bpc   Improvement: 0.0306 bpc
+#   progp :   49379 ->   8943 = 1.4489 bpc   Improvement: 0.2081 bpc
+#   paper1:   53161 ->  14543 = 2.1885 bpc   Improvement: 0.0665 bpc
+#   progl :   71646 ->  12863 = 1.4363 bpc   Improvement: 0.2197 bpc
+#   paper2:   82199 ->  22337 = 2.1739 bpc   Improvement: 0.0521 bpc
+#   trans :   93695 ->  14255 = 1.2171 bpc   Improvement: 0.2419 bpc
+#   geo   :  102400 ->  55475 = 4.3340 bpc   Improvement: 0.0170 bpc
+#   bib   :  111261 ->  23974 = 1.7238 bpc   Improvement: 0.1072 bpc
+#   obj2  :  246814 ->  66674 = 2.1611 bpc   Improvement: 0.2019 bpc
+#   news  :  377109 -> 103134 = 2.1879 bpc   Improvement: 0.1361 bpc
+#   pic   :  513216 ->  48498 = 0.7560 bpc   Improvement: 0.0260 bpc
+#   book2 :  610856 -> 139698 = 1.8295 bpc   Improvement: 0.1275 bpc
+#   book1 :  768771 -> 210254 = 2.1879 bpc   Improvement: 0.0581 bpc
+#   Total : 3251493 -> 774854 = 1.9065 bpc   Improvement: 0.0965 bpc
+#   Average:                    2.2049 bpc   Improvement: 0.0941 bpc
+#    
+# This script depends on the Calgary Corpus of
+# test texts being available in this directory:
+my $corpus_dir = "../calgary/corpus";
+my $prog       = "/usr/bin/PPMd e -m256 -r1 -o16";
+
+my @corpus = qw{ paper5  paper4  obj1    paper6  progc
+                 paper3  progp   paper1  progl   paper2
+                 trans   geo     bib     obj2    news 
+                 pic     book2   book1   };
+
+my %reference_bpc = (
+    paper5  => 2.8442,
+    paper4  => 2.7674,
+    obj1    => 3.5272,
+    paper6  => 2.2576,
+    progc   => 2.1988,
+    paper3  => 2.4484,
+    progp   => 1.4489,
+    paper1  => 2.1885,
+    progl   => 1.4363,
+    paper2  => 2.1739,
+    trans   => 1.2171,
+    geo     => 4.3340,
+    bib     => 1.7238,
+    obj2    => 2.1611,
+    news    => 2.1879,
+    pic     => 0.7560,
+    book2   => 1.8295,
+    book1   => 2.1879,
+    Total   => 1.9065,
+    Average => 2.2049,
+);
+
+
+sub get {
+    my ($filename) = @_;
+    if (! -d $corpus_dir) { die "$corpus_dir/ does not exist\n"; }
+    if (! -f "$corpus_dir/$filename") { die "$corpus_dir/$filename does not exist\n"; }
+    `cp $corpus_dir/$filename .`;
+    if (! -f $filename) { die "Unable to copy $corpus_dir/$filename to " . `pwd`; }
+}
+
+sub filelen {
+    my ($filename) = @_;
+    my ($dev,$ino,$mode,$nlink,$uid,$gid,$rdev,$size,
+        $atime,$mtime,$ctime,$blksize,$blocks)
+         = stat( $filename );
+    return $size;
+}
+
+sub no_negative_zero {
+    my ($number) = @_;
+    my $text = sprintf "%7.4f", $number;
+    if ($text =~ /^-0.0+$/) {
+        $text =  " 0.0000";
+    }
+    return $text;
+}
+
+my $old_sum  = 0;
+my $new_sum  = 0;
+my $bytes    = 0;
+my $count    = 0;
+my $comp_sum = 0;
+for my $file (@corpus) {
+   if (! -f $file) { get $file; }
+   if (  -f "$file.pmd") { `rm $file.pmd`; }
+    my $oldsize = filelen(  $file      );
+    `$prog e $file`;
+    my $newsize = filelen( "$file.pmd" ) - 12; # Ignore 12 bytes of header for research purposes.
+    my $bpc     = $oldsize   ?   $newsize * 8.0 / $oldsize   :   9.999;
+    printf "%-6s:%8d ->%7d = %6.4f bpc   Improvement:%s bpc\n", $file, $oldsize, $newsize, $bpc, no_negative_zero( $reference_bpc{$file} - $bpc );
+    $old_sum += $oldsize;
+    $new_sum += $newsize;
+    ++$count;
+    $comp_sum += $bpc;
+}
+my $bpc = $new_sum * 8.0 / $old_sum;
+printf "%-6s:%8d ->%7d = %6.4f bpc   Improvement:%s bpc\n", "Total", $old_sum, $new_sum, $bpc, no_negative_zero( $reference_bpc{'Total'} - $bpc );
+printf "%-6s:                    %6.4f bpc   Improvement:%s bpc\n", "Average", $comp_sum / $count, no_negative_zero( $reference_bpc{'Average'} - ($comp_sum / $count) );
+
+exit 0;
+

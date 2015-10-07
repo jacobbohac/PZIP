@@ -1,0 +1,28 @@
+pzip is a high-compression low-speed (computation
+intensive) experimental universal file compression
+utility.
+
+It began life as a port to linux of Charles Bloom's
+ppmz2 source code, downloaded from his 
+http://www.cbloom.com/src/ppmz.html page, together
+with Hannu Peltola and Jorma Tarhio's linux port of
+Charles's crblib code: http://www.cs.hut.fi/u/tarhio/ppmz
+
+The two have since been merged, pruned from 22,000
+lines down to 4000 lines, and then extensively
+commented and modified by Cynbe.
+
+I've named it "pzip" to fit into the Linux "gzip" "bzip"
+... family of file compressor names, and to avoid confusion
+with the original.
+
+This code is distributed under the GNU Public License,
+GPL, which gives you the right to freely use, modify
+and redistribute it provided that you grant others the
+same right:  See the file COPYING for details.
+
+   Cynbe
+   2004-04-30
+   cynbe@muq.org
+
+

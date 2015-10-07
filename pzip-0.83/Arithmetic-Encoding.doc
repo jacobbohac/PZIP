@@ -1,0 +1,156 @@
+Here's some background which may help understand the
+operation of arithc.c.
+
+
+Conceptually, we're constructing as our output
+an indefinite-precision fractional binary number.
+
+The state at any given moment during the encoding
+process may be visualized in terms of a partition
+of the unit interval from 0.0 to 1.0:  There are
+zones at the top and bottom of the interval which
+are already used by the preceding part of the
+encoded messages, and a free zone in the middle
+which we are still free to use:
+
+                   +-----------1.0------------+
+                   |                          |
+                   |     top used-up zone     |
+                   |                          |
+                -  +--------------------------+
+               /   |                          |
+              /    |                          |
+ free_wide   <     |     still-free zone      |
+              \    |                          |
+               \   |                          |
+ free_base ->   -  +--------------------------+
+                   |                          |
+                   |                          |
+                   |    bottom used-up zone   |
+                   |                          |
+                   |                          |
+                   +-----------0.0------------+
+
+Thus, the current state at any given time may be
+naturally encoded in terms of two variables
+free_base and free_width, as shown, giving the
+location and size of the free zone.
+
+To encode a bit where 0 has probability p and
+1 has probability (1-p), we first divide the
+free zone into two parts, whose sizes are in
+the ratio p :: (1-p).  Supposing p is 0.2,
+the result might look like so:
+
+
+                   +-----------1.0------------+
+                   |                          |
+                   |     top used-up zone     |
+                   |                          |
+                -  +--------------------------+
+               /   |                          |
+              /    | '1' part of free zone    |
+ free_wide   <     |                          |
+              \    | . . . . . . . . . . . .  |
+               \   | '0' part of free zone    |
+ free_base ->   -  +--------------------------+
+                   |                          |
+                   |                          |
+                   |    bottom used-up zone   |
+                   |                          |
+                   |                          |
+                   +-----------0.0------------+
+
+Finally, to encode a '0' we, we make the '0'
+part the new free zone, "using up" the '1'
+part, resulting a new state looking like:
+
+
+                   +-----------1.0------------+
+                   |                          |
+                   |     top used-up zone     |
+                   |                          |
+                   |                          |
+                   |                          |
+                   |     used-up '1' part     |
+                   |                          |
+                -  +--------------------------+
+ free_wide     <   |    new free zone         |
+ free_base ->   -  +--------------------------+
+                   |                          |
+                   |                          |
+                   |    bottom used-up zone   |
+                   |                          |
+                   |                          |
+                   +-----------0.0------------+
+
+Similarly, to encode a '1', we make the '1'
+part the new free zone, "using up" the '0'
+part, resulting in a new state looking like: 
+
+
+                   +-----------1.0------------+
+                   |                          |
+                   |     top used-up zone     |
+                   |                          |
+                -  +--------------------------+
+               /   |                          |
+ free_wide    <    |     new free zone        |
+               \   |                          |
+ free_base ->   -  +--------------------------+
+                   |    used-up '0' part      |
+                   |                          |
+                   |                          |
+                   |                          |
+                   |    bottom used-up zone   |
+                   |                          |
+                   |                          |
+                   +-----------0.0------------+
+
+
+(Note that when coding a highly probable bit,
+ the free zone shrinks very little, whereas
+ when coding a highly improbable bit, it
+  shrinks a lot.  This is what makes the
+  coding efficient.)
+
+Thus, we have two cases to code:
+
+    Coding a '0' bit:   free_base increases
+                        free_wide decreases by same amount
+
+    Coding a '1' bit:   free_base stays the same
+                        free_wide decreases
+
+
+
+arith_Encode_Bit() implements the above encoding technique;
+arith_Decode_Bit() implements the reverse procedure.
+
+   
+          *     *     *    *     *     *     *
+
+More generally, we may wish to encode one of N symbols,
+each of which has a different a priori probability.  The
+procedure for this is strictly analogous to the above
+encoding algorithm, except that instead of partitioning
+the free zone into two sections for the two possible
+bit values 0 and 1, we partition it into N sections
+with sizes proportial to probability of the corresponding
+symbol.  To encode a particular symbol, we then make its
+section the new free zone.
+
+arith_Encode_1_Of_N() implements this more general procedure.
+
+We implement the corresponding decode operation as a
+two-step process:
+
+1)  arith_Get_1_Of_N() nondestructively returns the
+    current free.base, appropriately scaled.  The
+    caller may use this plus information in hand
+    to determine which symbol was encoded.
+
+2)  arith_Decode_1_Of_N() is then called with this
+    information, allowing the free zone update to
+    be properly completed.
+  
