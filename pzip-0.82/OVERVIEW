@@ -1,0 +1,150 @@
+For general background on PPM class file compression programs, see
+references such as:
+
+    http://www.cs.brown.edu/publications/techreports/reports/CS-93-28.html:
+        The Design and Analysis of Efficient Lossless Data Compression Systems
+        1993 98p Paul Glor Howard, PhD Thesis, Brown Univ
+
+
+    ftp://ftp.cs.washington.edu/tr/1997/03/UW-CSE-97-03-02.PS.Z
+        On-Line Stochastic Processes in Data Compression
+         1996 156p Suzanne Bunton, PhD Thesis, Univ of Washington Dept CSci & Eng
+
+pzip is a rewrite of Charles Bloom's ppmz2
+()
+which was based upon
+
+        http://www.cs.waikato.ac.nz/~ml/publications/1995/Cleary-Teahan-Witten-ppm.pdf
+        Unbounded Length Contexts for PPM
+        John G Cleary, W J Teahan, Ian H Witten
+        1996  10 pages
+
+--  required reading for understanding this program!
+
+
+For more recent and specialized papers, check out the references
+in the above papers, or punch "ppm partial pattern matching" into
+your favorite search engine.
+
+Here is the basic pzip datastructure tree:
+
+Pzip:
+        Trie*:
+                Node      lru;
+                uint      orders;
+                Context*:  order0,
+                Context**: order1:
+                        Node     siblings;
+                        uint     key;
+                        int      order;
+                        Node     lru;
+                        Context* parent;
+                        Context* child;
+                        int           escape_count;
+                        int           symbol_count;
+                        int           total_symbol_count;
+                        int           max_count;
+
+                        Followset_Node* followset:
+                                Followset_Node* next;
+                                uword           symbol;
+                                uword           count;
+
+                        See_State* seeState:
+                                Node       node;
+                                See_State* parent;
+                                See_State* child;
+                                uint       hash;
+                                uint       seen;
+                                uint       esc;
+                                uint       tot;
+
+
+        Excluded_Symbols*:
+                uint is_set;
+                bool is_empty;
+                uint symbol_set[256];
+
+        See*:
+                See_State order0[ ORDER0_SIZE ],
+                See_State order1[ ORDER1_SIZE ]:
+
+                Pool*    StatePool;
+
+        Det*:
+                Escape*  zesc;
+                        uword* esc[ ORDERS ];
+                        uword* tot[ ORDERS ];
+
+                uint     node_array_i;
+                Deterministic_Node node_array[ NODE_ARRAY_SIZE +1 ];
+                        Node   node;              /* Must be at head. */
+                        uword  min_len;
+                        ubyte* input_ptr;
+
+
+                Pool*    deterministic_context_pool;
+
+                /* Stuff saved from Enc/Dec to Update: */
+                Context*     got_context;
+                Deterministic_Node*    got_node;
+                Deterministic_Node*    next_node;
+                uint         got_ml;
+                uint         longest_ml;
+                Deterministic_Context* got_d_context;
+                        Node node;
+                        uint match;
+                        uint escape;
+
+
+
+
+Here is the basic pzip compression calltree:
+
+main                                                            1
+    pzip_Encode                                                 1
+        context_Update                                    6915213 
+            see_Get_State                                 3792873
+                stats_from_hash                             46892   
+                pool_Get_Hunk                               46892   
+            pool_Auto_Get_Hunk                            4999678 
+            see_Adjust_State                              3792873 
+            maybe_halve_counts                                822 
+        choose_order                                       918934
+            see_Get_State                                 5432040
+            see_Estimate_Escape_Probability               5432040
+            context_Get_Followset_Stats_With_Excluded...  5462899
+            context_Choose_Full                           4734261
+        trie_Get_Active_Contexts                           768763
+            find_or_create                                5381341
+                context_Find                              5381341 
+                context_Create                            2180127
+                mark_new_context_as_most_recently_used    2179870  
+                mark_old_context_as_most_recently_used    3201471
+        context_Encode                                     918934
+            see_Get_State                                  913074
+            see_Encode_Escape                              918933 
+                get_stats                                  539963
+                arith_Encode_Bit                           918933 
+                see_Adjust_State                           539963
+            context_Get_Followset_Stats_With_Excluded...   918933
+            excluded_symbols_Add                          7501039 
+            excluded_symbols_Contains                     9013397
+            arith_Encode_1_Of_N                            768275 
+            context_Choose_Full                            768254
+        deterministic_Update                               768763
+            add_node_to_context                            768763  
+        deterministic_Encode                               768763
+            do_match                                       768763
+                getNode                                    768367
+                    match_back                              15423
+                        escape_Encode                         508 
+                        excluded_symbols_Add                  508
+                        excluded_symbols_Is_Empty             508 
+        excluded_symbols_Clear                             768763
+           
+(The above is taken from a gprof dump of a test run on
+the standard 'book1' file, which contains 768771 chars.
+In the interest of clarity, I've suppressed some leaf
+calls doing memory de/allocation and such.)
+

@@ -1,0 +1,35 @@
+Nothing fancy -- I haven't written a ./Configure or such
+yet.  (Feel free to contribute one if you like! :)
+
+Do
+
+   tar -xjf pzip-0.82.tar.bz2
+
+to extract, then build via
+
+   cd pzip-0.82
+   make pzip
+
+You can do
+
+   make check
+
+to verify correct operation.
+
+Compress a file by doing:
+
+   ./pzip -e file file.pz
+
+Uncompress a file by doing
+
+   ./pzip file.pz file
+
+If you have the Calgary Corpus in ../calary/corpus/
+you can do
+
+   ./Report
+
+to generate a listing of pzip's performance.
+
+ -- Cynbe
+    cynbe@muq.org

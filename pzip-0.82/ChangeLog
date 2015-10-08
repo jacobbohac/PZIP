@@ -1,0 +1,180 @@
+2004-05-03  Cynbe ru Taren  <cynbe@muq.org>
+
+	* *blink*:  Dropping the "pretty useless" 'full' (vs "excluded')
+	context trie not only dropped execution time by a further 14%,
+	but also improved compression in a few files:
+
+            cynbe@maw compression/pzip-0.82% time ./Report
+	    paper5:  11954 ->   4329 = 2.897 bpc
+	    paper4:  13286 ->   4621 = 2.782 bpc
+	    obj1  :  21504 ->   9844 = 3.662 bpc
+	    paper6:  38105 ->  10923 = 2.293 bpc
+	    progc :  39611 ->  11155 = 2.253 bpc
+	    paper3:  46526 ->  14322 = 2.463 bpc
+	    progp :  49379 ->   8927 = 1.446 bpc
+	    paper1:  53161 ->  14689 = 2.210 bpc
+	    progl :  71646 ->  12955 = 1.447 bpc
+	    paper2:  82199 ->  22456 = 2.186 bpc
+	    trans :  93695 ->  14212 = 1.213 bpc
+	    geo   : 102400 ->  58597 = 4.578 bpc
+	    bib   : 111261 ->  23868 = 1.716 bpc
+	    obj2  : 246814 ->  69124 = 2.241 bpc
+	    news  : 377109 -> 103924 = 2.205 bpc
+	    pic   : 513216 ->  48375 = 0.754 bpc
+	    book2 : 610856 -> 140736 = 1.843 bpc
+	    book1 : 768771 -> 210931 = 2.195 bpc
+	    92.670u 0.940s 1:34.85 98.6%	0+0k 0+0io 4665pf+0w
+	    cynbe@maw compression/pzip-0.82% make clean;make check;make id;make etags
+	    *** output flushed ***
+	    cynbe@maw compression/pzip-0.82% time ./Report
+	    paper5:  11954 ->   4329 = 2.897 bpc
+	    paper4:  13286 ->   4621 = 2.782 bpc
+	    obj1  :  21504 ->   9844 = 3.662 bpc
+	    paper6:  38105 ->  10923 = 2.293 bpc
+	    progc :  39611 ->  11155 = 2.253 bpc
+	    paper3:  46526 ->  14322 = 2.463 bpc
+	    progp :  49379 ->   8927 = 1.446 bpc
+	    paper1:  53161 ->  14689 = 2.210 bpc
+	    progl :  71646 ->  12955 = 1.447 bpc
+	    paper2:  82199 ->  22456 = 2.186 bpc
+	    trans :  93695 ->  14212 = 1.213 bpc
+	    geo   : 102400 ->  58597 = 4.578 bpc
+	    bib   : 111261 ->  23868 = 1.716 bpc
+	    obj2  : 246814 ->  69124 = 2.241 bpc
+	    news  : 377109 -> 103916 = 2.204 bpc <- better
+	    pic   : 513216 ->  48375 = 0.754 bpc 
+	    book2 : 610856 -> 140476 = 1.840 bpc <- better
+	    book1 : 768771 -> 210258 = 2.188 bpc <- better
+	    79.690u 0.780s 1:21.41 98.8%	0+0k 0+0io 4665pf+0w
+	    cynbe@maw compression/pzip-0.82% perl -e 'printf"%g\n",(92.670-79.690)/92.670'
+	    0.140067
+
+	* Discovered that adding move-to-front to reduces runtime
+	by an additional 12.5%. :)
+
+	* context.c: Killed the last 'goto' in pzip! :)
+
+2004-05-02  Cynbe ru Taren  <cynbe@muq.org>
+
+	* Did a little experiment to see how long context.c and see.c
+	linklist searches are.  With move-to-front implemented, I get
+	average search lengths of
+	   context: 4.36851
+	   see:     8.75418
+	when compressing book1 -- so going to splaytrees or such would
+	be unlikely to gain us much, if anything.
+
+2004-04-30  Cynbe ru Taren  <cynbe@muq.org>
+
+	* Found that changing from rotate-to-front to move-to-front in
+	context_Find and see.c:stats_from_hash speeds the program up by
+	20% :)
+
+	* OVERVIEW: Added this file to document the pzip algorithms and
+	datastructures.	
+
+	* HACK.DOC: Added this file to document coding conventions used.
+
+	* More file and function renaming for clarity.
+
+2004-04-29  Cynbe ru Taren  <cynbe@muq.org>
+
+	* Report: Wrote a little 'Report' script to generate listings like
+	    bib            :    111261 ->    23880 = 1.717 bpc
+	    book1          :    768771 ->   210943 = 2.195 bpc
+	    book2          :    610856 ->   140749 = 1.843 bpc
+	    geo            :    102400 ->    58608 = 4.579 bpc
+	    news           :    377109 ->   103936 = 2.205 bpc
+	    obj1           :     21504 ->     9856 = 3.667 bpc
+	    obj2           :    246814 ->    69136 = 2.241 bpc
+	    paper1         :     53161 ->    14701 = 2.212 bpc
+	    paper2         :     82199 ->    22468 = 2.187 bpc
+	    paper3         :     46526 ->    14334 = 2.465 bpc
+	    paper4         :     13286 ->     4633 = 2.790 bpc
+	    paper5         :     11954 ->     4340 = 2.904 bpc
+	    paper6         :     38105 ->    10935 = 2.296 bpc
+	    pic            :    513216 ->    48387 = 0.754 bpc
+	    progc          :     39611 ->    11167 = 2.255 bpc
+	    progl          :     71646 ->    12967 = 1.448 bpc
+	    progp          :     49379 ->     8939 = 1.448 bpc
+	    trans          :     93695 ->    14224 = 1.214 bpc
+
+	* Added 'make profile'.  Here are the the top-ten cycle eaters:
+
+	      %   cumulative   self              self     total           
+	     time   seconds   seconds    calls   s/call   s/call  name    
+	     28.87      8.17     8.17 10137987     0.00     0.00  see_getState
+	     16.95     12.97     4.80 10708086     0.00     0.00  contextData_update
+	     15.37     17.32     4.35  5381341     0.00     0.00  context_find
+	      6.22     19.08     1.76  6381832     0.00     0.00  contextData_getExcludedInfo
+	      5.67     20.68     1.61 26897304     0.00     0.00  ilog2round
+	      4.13     21.85     1.17   918934     0.00     0.00  codeContext_encodeFromContext
+	      3.57     22.86     1.01  2241442     0.00     0.00  getStats
+	      3.50     23.85     0.99     6036     0.00     0.00  extend
+	      2.12     24.45     0.60   768763     0.00     0.00  contextTrie_getNodes
+	      2.09     25.04     0.59  6915213     0.00     0.00  context_update
+	      2.09     25.63     0.59   918934     0.00     0.00  loe_chooseOrder
+	      1.02     25.92     0.29  3201471     0.00     0.00  lru_old_context
+
+
+2004-04-28  Cynbe ru Taren  <cynbe@muq.org>
+
+	* Added 'tarball', 'id' and 'etags' entries to Makefile.
+
+	* Added a VERSION number in Makefile, which propagates
+	automatically to version.h.  Started version at 0.81,
+	since I think the parent source was ppmz2 v0.8.
+
+	* Moved the needed parts of Charles Bloom's crblib into the main
+	program directory and eliminated crblib -- there's no obvious need
+	to distribute RPN calculator code &tc in the pzip source distro.
+	Chopping out the deadwood and Windows-specific kludges reduced the
+	source code from 23410 lines of C to 3864 lines -- an 83.5% shrink:
+	   393   1316  10223 arithc.c
+	    49    199   1562 arithc.h
+	   144    451   3822 codecntx.c
+	    17     57    486 codecntx.h
+	    45    188   1494 config.c
+	    45    148   1378 config.h
+	   314   1058   9837 context.c
+	    81    247   2023 context.h
+	   157    524   4266 contexttrie.c
+	    17     60    536 contexttrie.h
+	    99    405   4444 crc32.c
+	     9     27    210 crc32.h
+	   308    885   7734 det.c
+	    21     78    582 det.h
+	   243    964   7025 escape.c
+	    14     59    432 escape.h
+	    65    164   1326 exclude.c
+	    17     55    492 exclude.h
+	    42    129    840 fileutil.c
+	    15     40    303 fileutil.h
+	    50    138   1042 inc.h
+	   192    483   4693 intmath.c
+	    70    146    999 intmath.h
+	    15     32    249 list.c
+	    31    102   1140 list.h
+	    98    359   3160 loe.c
+	    17     38    316 loe.h
+	   196    570   4808 main.c
+	    45    151   1032 minusone.c
+	    12     31    289 minusone.h
+	   208    543   4720 pool.c
+	    16     73    551 pool.h
+	   331   1120  10531 pzip.c
+	    10     28    219 pzip.h
+	   452   1658  12235 see.c
+	    25    104    835 see.h
+	     1      3     21 version.h
+	  3864  12633 105855 total
+	
+	* Imposed a uniform code style on the previous style-per-function
+	chaos. 
+
+	* Renamed from ppmz2 to pzip -- more likely to be understood by
+	Linux users.
+
+	* Instituted a ChangeLog. :)
+	
+

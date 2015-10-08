@@ -1,0 +1,42 @@
+gcc -c -O -Wall -Wno-parentheses -Wno-comment -g -pg -fprofile-arcs  arithmetic-encoding.c
+gcc -c -O -Wall -Wno-parentheses -Wno-comment -g -pg -fprofile-arcs  config.c
+gcc -c -O -Wall -Wno-parentheses -Wno-comment -g -pg -fprofile-arcs  context.c
+context.c: In function ‘mark_new_context_as_most_recently_used’:
+context.c:482:39: warning: cast from pointer to integer of different size [-Wpointer-to-int-cast]
+         Context* to_die = (Context*)( (u32)node - (u32)(&((Context*)0)->least_recently_used) );
+                                       ^
+context.c:482:51: warning: cast from pointer to integer of different size [-Wpointer-to-int-cast]
+         Context* to_die = (Context*)( (u32)node - (u32)(&((Context*)0)->least_recently_used) );
+                                                   ^
+context.c:482:27: warning: cast to pointer from integer of different size [-Wint-to-pointer-cast]
+         Context* to_die = (Context*)( (u32)node - (u32)(&((Context*)0)->least_recently_used) );
+                           ^
+gcc -c -O -Wall -Wno-parentheses -Wno-comment -g -pg -fprofile-arcs  crc32.c
+gcc -c -O -Wall -Wno-parentheses -Wno-comment -g -pg -fprofile-arcs  deterministic.c
+gcc -c -O -Wall -Wno-parentheses -Wno-comment -g -pg -fprofile-arcs  det_escape.c
+gcc -c -O -Wall -Wno-parentheses -Wno-comment -g -pg -fprofile-arcs  excluded_symbols.c
+gcc -c -O -Wall -Wno-parentheses -Wno-comment -g -pg -fprofile-arcs  hash.c
+gcc -c -O -Wall -Wno-parentheses -Wno-comment -g -pg -fprofile-arcs  intmath.c
+gcc -c -O -Wall -Wno-parentheses -Wno-comment -g -pg -fprofile-arcs  main.c
+main.c: In function ‘main’:
+main.c:172:14: warning: ignoring return value of ‘fread’, declared with attribute warn_unused_result [-Wunused-result]
+         fread( input_buf, 1, input_len, in_fp );
+              ^
+main.c:201:14: warning: ignoring return value of ‘fread’, declared with attribute warn_unused_result [-Wunused-result]
+         fread( encode_buf, 1, encode_len, in_fp );
+              ^
+gcc -c -O -Wall -Wno-parentheses -Wno-comment -g -pg -fprofile-arcs  node.c
+gcc -c -O -Wall -Wno-parentheses -Wno-comment -g -pg -fprofile-arcs  order-1.c
+gcc -c -O -Wall -Wno-parentheses -Wno-comment -g -pg -fprofile-arcs  pool.c
+gcc -c -O -Wall -Wno-parentheses -Wno-comment -g -pg -fprofile-arcs  pzip.c
+pzip.c: In function ‘pzip_Encode’:
+pzip.c:208:13: warning: format ‘%d’ expects argument of type ‘int’, but argument 3 has type ‘long int’ [-Wformat=]
+             fprintf(stderr, "%d/%d\r", (input_ptr - input_buf), input_len );
+             ^
+pzip.c: In function ‘pzip_Decode’:
+pzip.c:307:13: warning: format ‘%d’ expects argument of type ‘int’, but argument 3 has type ‘long int’ [-Wformat=]
+             fprintf(stderr, "%d/%d\r", (output_ptr - output_buf), output_len );
+             ^
+gcc -c -O -Wall -Wno-parentheses -Wno-comment -g -pg -fprofile-arcs  safe.c
+gcc -c -O -Wall -Wno-parentheses -Wno-comment -g -pg -fprofile-arcs  see.c
+gcc -o pzip -O -Wall -Wno-parentheses -Wno-comment -g -pg -fprofile-arcs arithmetic-encoding.o config.o context.o crc32.o deterministic.o det_escape.o excluded_symbols.o hash.o intmath.o main.o node.o order-1.o pool.o pzip.o safe.o see.o -lm
